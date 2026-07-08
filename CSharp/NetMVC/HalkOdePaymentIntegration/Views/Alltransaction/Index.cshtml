@@ -1,0 +1,45 @@
+﻿@using Newtonsoft.Json
+@{
+    ViewData["Title"] = "Tüm İşlemler";
+}
+
+<!DOCTYPE html>
+<html lang="tr">
+
+<body>
+
+    <div class="container mt-4">
+        <h2>Tüm İşlemler</h2>
+
+        <!-- HTML Form for User Input -->
+        <form method="post">
+            <div class="form-group">
+                <label for="merchant_key">Üye İş Yeri Numarası:</label>
+                <input type="text" id="merchant_key" name="merchant_key" value="" maxlength="60" class="form-control" required>
+            </div>
+            <button type="submit" name="process_payment" class="btn">Tüm İşlemler Göster</button>
+        </form>
+    </div>
+
+    @if (ViewBag.Error != null)
+    {
+        <p><strong>Hata:</strong> @ViewBag.Error</p>
+    }
+
+    @if (ViewBag.RequestData != null)
+    {
+        <h3>Gönderilen Veriler</h3>
+        <pre>@Html.Raw(JsonConvert.SerializeObject(ViewBag.RequestData, Formatting.Indented))</pre>
+    }
+
+    @if (ViewBag.ResponseData != null)
+    {
+        <h3>Yanıt</h3>
+        <pre>@Html.Raw(JsonConvert.SerializeObject(ViewBag.ResponseData, Formatting.Indented))</pre>
+    }
+
+
+
+
+</body>
+</html>
