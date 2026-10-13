@@ -1,0 +1,12 @@
+HalkÖde yapılandırması
+
+1. PHP klasöründeki halkode-config.php dosyasını açın.
+2. Size iletilen test veya canlı bilgileri aşağıdaki alanlara yazın:
+   merchant_key
+   app_id
+   app_secret
+3. Dosyayı kaydedin.
+4. Uygulamayı tekrar açın.
+
+Environment variable veya setup.php kullanılmaz.
+Yapılandırma doğrudan halkode-config.php dosyasından okunur.

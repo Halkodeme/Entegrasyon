@@ -1,3 +1,7 @@
+<?php
+require_once __DIR__ . '/degisken.php';
+ require_once __DIR__ . '/security.php';  halkode_require_sensitive_action();
+?>
 <!DOCTYPE html>
 <html lang="tr">
 
@@ -14,15 +18,11 @@
     <div class="container">
         <h2 class="mt-5">Tarih Görme Entegrasyonu</h2>
 
-        <!-- HTML Form for User Input -->
+        
         <form method="post">
             <label for="invoiceId">Fatura ID:</label>
             <input type="text" id="invoiceId" name="invoice_id" value="" required><br><br>
-
-            <label for="merchantKey">MerchantKey:</label>
-            <input type="text" id="merchantKey" name="merchant_key" value="" required><br><br>
-
-            <label for="credit_card">Kredi Kartı Numarası:</label>
+<label for="credit_card">Kredi Kartı Numarası:</label>
             <input type="text" id="credit_card" name="credit_card" value="" required><br><br>
 
             <label for="amount">Miktar:</label>
@@ -37,16 +37,16 @@
 
     <?php
     if (isset($_POST['process_payment'])) {
-        // Temel değişkenleri tanımla
+        
         $baseUrl = "https://testapp.halkode.com.tr/ccpayment/api/getTransactions";
-        include 'degisken.php';
+        
         $invoice_id = $_POST['invoice_id'];
         $credit_card = $_POST['credit_card'];
         $amount = $_POST['amount'];
         $currency_code = $_POST['currency_code'];
-        $date = date('Y-m-d');  // Güncel tarihi al
+        $date = date('Y-m-d');  
 
-        // Token isteği
+        
         $tokenResponse = getToken($app_id, $appSecret);
         $decodedTokenResponse = json_decode($tokenResponse, true);
 
@@ -57,7 +57,7 @@
             return;
         }
 
-        // Formdan verileri topla
+        
         $data = array(
             "merchant_key" => $merchant_key,
             "date" => $date,
@@ -67,11 +67,18 @@
             "currency_code" => $currency_code,
         );
 
-        // Gönderilen verileri göster
+        
+        $displayData = halkode_safe_display_payload($data);
+        if (!empty($displayData['credit_card'])) {
+            $digits = preg_replace('/\D+/', '', (string)$displayData['credit_card']);
+            $displayData['credit_card'] = strlen($digits) >= 10
+                ? substr($digits, 0, 6) . str_repeat('*', max(strlen($digits) - 10, 0)) . substr($digits, -4)
+                : '******';
+        }
         echo "<h3>Gönderilen Veriler</h3>";
-        echo "<pre>" . htmlspecialchars(json_encode($data, JSON_PRETTY_PRINT)) . "</pre>";
+        echo "<pre>" . htmlspecialchars(json_encode($displayData, JSON_PRETTY_PRINT)) . "</pre>";
 
-        // Ödeme isteğini göndermek için CURL
+        
         $ch = curl_init($baseUrl);
         curl_setopt($ch, CURLOPT_HTTPHEADER, array(
             'Content-Type: application/json',
@@ -81,22 +88,30 @@
         curl_setopt($ch, CURLOPT_POST, true);
         curl_setopt($ch, CURLOPT_POSTFIELDS, $jsonData);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, false);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 20);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, false);
         $response = curl_exec($ch);
         curl_close($ch);
 
-        // Yanıtı göster
+        
         echo "<h3>Yanıt</h3><pre>" . htmlspecialchars($response) . "</pre>";
 
-        // Güncel tarihi göster
-        echo "<h3>Güncel Tarih</h3><p>$date</p>";  // Güncel tarihi burada gösteriyoruz
+        
+        echo "<h3>Güncel Tarih</h3><p>$date</p>";  
     }
 
     function generateHashKey($total, $installment, $currency_code, $merchant_key, $invoice_id, $app_secret)
     {
         $data = $total . '|' . $installment . '|' . $currency_code . '|' . $merchant_key . '|' . $invoice_id;
-        $iv = substr(sha1(mt_rand()), 0, 16);
+        $iv = bin2hex(random_bytes(8));
         $password = sha1($app_secret);
-        $salt = substr(sha1(mt_rand()), 0, 4);
+        $salt = bin2hex(random_bytes(2));
         $saltWithPassword = hash('sha256', $password . $salt);
         $encrypted = openssl_encrypt("$data", 'aes-256-cbc', "$saltWithPassword", 0, $iv);
         $msg_encrypted_bundle = "$iv:$salt:$encrypted";
@@ -113,6 +128,11 @@
         curl_setopt($ch, CURLOPT_POST, true);
         curl_setopt($ch, CURLOPT_POSTFIELDS, $jsonData);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 15);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, false);
         curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json'));
         $response = curl_exec($ch);
         curl_close($ch);

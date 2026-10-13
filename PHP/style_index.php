@@ -6,7 +6,7 @@
             position: relative;
         }
 
-        /* Background Image */
+        
         .background-image {
             position: absolute;
             top: 0;
@@ -21,7 +21,7 @@
 
         .container {
             flex: 1;
-            z-index: 1; /* Ensures content is on top of the background image */
+            z-index: 1; 
         }
 
         .navbar-custom {
@@ -47,8 +47,8 @@
         footer {
             background-color: #1b0565;
             color: white;
-            z-index: 1; /* Footer stays above background image */
-            margin-top: auto; /* Push footer to the bottom */
+            z-index: 1; 
+            margin-top: auto; 
         }
 
         .btn-custom {

@@ -1,3 +1,7 @@
+<?php
+require_once __DIR__ . '/degisken.php';
+ require_once __DIR__ . '/security.php';  halkode_require_sensitive_action();
+?>
 <!DOCTYPE html>
 <html lang="tr">
 
@@ -15,7 +19,7 @@
     <div class="container mt-4">
         <h2 class="">Ödeme Sorgulama</h2>
 
-        <!-- HTML Form for User Input -->
+        
         <form method="post" class="">
             <label for="invoiceId" class="">Fatura ID:</label>
             <input type="text" id="invoiceId" name="invoice_id" value="" class="form-control" required><br><br>
@@ -25,13 +29,13 @@
 
         <?php
         if (isset($_POST['process_payment'])) {
-            // Temel değişkenleri tanımla
+            
           
             $baseUrl = "https://testapp.halkode.com.tr/ccpayment/api/checkstatus";
-            include 'degisken.php';
+            
             $invoice_id = $_POST['invoice_id'];
 
-            // Token isteği
+            
             $tokenResponse = getToken($app_id, $appSecret);
             $decodedTokenResponse = json_decode($tokenResponse, true);
 
@@ -42,17 +46,17 @@
                 return;
             }
 
-            // Formdan verileri topla
+            
             $data = array(
                 "invoice_id" => $invoice_id,
                 "merchant_key" => $merchantKey,
             );
 
-            // Gönderilen verileri göster
+            
             echo "<h3>Gönderilen Veriler</h3>";
             echo "<pre>" . htmlspecialchars(json_encode($data, JSON_PRETTY_PRINT)) . "</pre>";
 
-            // Ödeme isteğini göndermek için CURL
+            
             $ch = curl_init($baseUrl);
             curl_setopt($ch, CURLOPT_HTTPHEADER, array(
                 'Content-Type: application/json',
@@ -62,15 +66,20 @@
             curl_setopt($ch, CURLOPT_POST, true);
             curl_setopt($ch, CURLOPT_POSTFIELDS, $jsonData);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 20);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
+            curl_setopt($ch, CURLOPT_FOLLOWLOCATION, false);
             $response = curl_exec($ch);
             curl_close($ch);
 
-            // Yanıtı göster
+            
             echo "<h3>Yanıt</h3>";
             echo "<table class='table table-bordered'>";
             echo "<thead><tr><th>Parametre</th><th>Değer</th></tr></thead><tbody>";
 
-            // Yanıtı JSON olarak işleyip tabloya ekle
+            
             $responseData = json_decode($response, true);
             if ($responseData) {
                 foreach ($responseData as $key => $value) {
@@ -92,6 +101,11 @@
             curl_setopt($ch, CURLOPT_POST, true);
             curl_setopt($ch, CURLOPT_POSTFIELDS, $jsonData);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 15);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
+            curl_setopt($ch, CURLOPT_FOLLOWLOCATION, false);
             curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json'));
             $response = curl_exec($ch);
             curl_close($ch);

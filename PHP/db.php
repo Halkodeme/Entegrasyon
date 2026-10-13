@@ -1,14 +1,24 @@
 <?php
-$host = "127.0.0.1";
-$db = "testphp";
-$user = "root";
-$pass = ""; // Şifre genellikle boş olur, eğer farklıysa buraya yaz
+$host = getenv('DB_HOST') ?: '127.0.0.1';
+$db = getenv('DB_NAME') ?: 'testphp';
+$user = getenv('DB_USER') ?: 'root';
+$passEnv = getenv('DB_PASS');
+$pass = $passEnv === false ? '' : $passEnv;
 
 try {
-    $pdo = new PDO("mysql:host=$host;dbname=$db;charset=utf8", $user, $pass);
-    // Hata yakalama modu aktif
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $pdo = new PDO(
+        "mysql:host={$host};dbname={$db};charset=utf8mb4",
+        $user,
+        $pass,
+        [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_EMULATE_PREPARES => false,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+        ]
+    );
 } catch (PDOException $e) {
-    die("Veritabanı bağlantı hatası: " . $e->getMessage());
+    error_log('Database connection error: ' . $e->getMessage());
+    http_response_code(500);
+    die('Veritabanı bağlantısı kurulamadı.');
 }
 ?>

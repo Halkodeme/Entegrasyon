@@ -1,22 +1,33 @@
 <?php
+require_once __DIR__ . '/degisken.php';
+ require_once __DIR__ . '/security.php';  halkode_require_sensitive_action();
+?>
+<?php
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $data = json_decode(file_get_contents('php://input'), true);
 
-    $ccNo = $data['cc_no'];
-    $total = $data['total'];
+    $ccNo = preg_replace('/\D+/', '', (string)($data['cc_no'] ?? ''));
+    $ccNo = substr($ccNo, 0, 6);
+    $total = (float)($data['total'] ?? 0);
+
+    if (strlen($ccNo) !== 6 || $total <= 0) {
+        http_response_code(400);
+        echo json_encode(['error' => 'Geçersiz BIN veya tutar.']);
+        return;
+    }
 
     $baseUrl = "https://testapp.halkode.com.tr/ccpayment/api/getpos";
-    include 'degisken.php';
+    
     $currencyCode = "TRY";
 
-    // Token isteği
+    
     $tokenResponse = getToken($app_id, $appSecret);
     $decodedTokenResponse = json_decode($tokenResponse, true);
 
     if ($decodedTokenResponse['status_code'] == 100) {
         $token = $decodedTokenResponse['data']['token'];
     } else {
-        echo json_encode(['error' => 'Token alınamadı', 'token_response' => $decodedTokenResponse]);
+        echo json_encode(['error' => 'Token alınamadı.']);
         return;
     }
 
@@ -36,17 +47,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     curl_setopt($ch, CURLOPT_POST, true);
     curl_setopt($ch, CURLOPT_POSTFIELDS, $jsonData);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 15);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
+    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, false);
 
-    // CURL hatalarını yakala
+    
     curl_setopt($ch, CURLOPT_FAILONERROR, true);
 
     $response = curl_exec($ch);
 
-    // CURL hata kontrolü
+    
     if (curl_errno($ch)) {
         $error_msg = curl_error($ch);
         curl_close($ch);
-        echo json_encode(['error' => 'CURL Hatası: ' . $error_msg]);
+        error_log('HalkOde getpos network error: ' . $error_msg); echo json_encode(['error' => 'Taksit servisine ulaşılamadı.']);
         return;
     }
 
@@ -54,10 +70,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $response_data = json_decode($response, true);
 
-    // API'den dönen yanıtı logla
-    error_log("API Yanıtı: " . print_r($response_data, true));
-
-    if (isset($response_data['data'])) {
+    
+if (isset($response_data['data'])) {
         $installments = [];
         foreach ($response_data['data'] as $item) {
             $installments[] = [
@@ -68,7 +82,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         echo json_encode(['installments' => $installments]);
     } else {
-        echo json_encode(['error' => 'Taksit bilgisi alınamadı', 'api_response' => $response_data]);
+        echo json_encode(['error' => 'Taksit bilgisi alınamadı.']);
     }
 }
 
@@ -83,16 +97,16 @@ function getToken($app_id, $app_secret)
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json'));
 
-    // CURL hatalarını yakala
+    
     curl_setopt($ch, CURLOPT_FAILONERROR, true);
 
     $response = curl_exec($ch);
 
-    // CURL hata kontrolü
+    
     if (curl_errno($ch)) {
         $error_msg = curl_error($ch);
         curl_close($ch);
-        return json_encode(['error' => 'CURL Hatası: ' . $error_msg]);
+        error_log('HalkOde token network error: ' . $error_msg); return json_encode(['error' => 'Token servisine ulaşılamadı.']);
     }
 
     curl_close($ch);

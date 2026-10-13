@@ -1,48 +1,25 @@
 <?php
+require_once dirname(__DIR__, 2) . '/security.php';
+require_once dirname(__DIR__, 2) . '/api_security.php';
+include dirname(__DIR__, 2) . '/degisken.php';
 
-$app_id = "a2a7cb8131890a35353629182274c756";
-$app_secret = "a9b5c28211388c7a6a705122a24e6f46";
-
-$token = getToken($app_id, $app_secret);
-
-echo $token;
-
-function getToken($app_id, $app_secret) {
-    $baseUrl = "https://testapp.platformode.com.tr/ccpayment/api/token";
-
-    $data = array(
-        'app_id' => $app_id,
-        'app_secret' => $app_secret
-    );
-
-    $jsonData = json_encode($data);
-
-    $ch = curl_init($baseUrl);
-
-    curl_setopt($ch, CURLOPT_POST, true);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, $jsonData);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_HTTPHEADER, array(
-        'Content-Type: application/json',
-    ));
-
-    $response = curl_exec($ch);
-
-    if (curl_errno($ch)) {
-        return 'Hata: ' . curl_error($ch);
-    } else {
-        $decodedResponse = json_decode($response, true);
-        
-        if ($decodedResponse['status_code'] == 100 ) {
-			echo "İşlem Başarılı <br><br>";
-			return $response;
-        } else {
-			echo "İşlem Başarısız <br><br>";
-            return $response;
-        }
-    }
-
-    curl_close($ch);
+if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
+    header('Allow: POST');
+    http_response_code(405);
+    exit;
 }
 
-?>
+halkode_require_sensitive_action();
+
+header('Content-Type: application/json; charset=UTF-8');
+header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+
+$token = halkode_get_token($app_id, $appSecret);
+
+if ($token === null) {
+    http_response_code(502);
+    echo json_encode(['status' => 'error', 'message' => 'Token alınamadı.'], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
+echo json_encode(['status' => 'ok', 'message' => 'Token güvenli şekilde alındı.'], JSON_UNESCAPED_UNICODE);

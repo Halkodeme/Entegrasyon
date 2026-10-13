@@ -1,3 +1,7 @@
+<?php
+require_once __DIR__ . '/degisken.php';
+ require_once __DIR__ . '/security.php'; halkode_require_sensitive_action();
+?>
 <!DOCTYPE html>
 <html lang="tr">
 
@@ -16,7 +20,7 @@
     <div class="container mt-4">
         <h2 class="">Üye iş Yeri Desteklenen Taksit Sayısı</h2>
 
-        <!-- HTML Form for User Input -->
+        
         <form method="post">
 
             <div class="form-group">
@@ -30,13 +34,13 @@
 
     <?php
     if (isset($_POST['process_payment'])) {
-        // Temel değişkenleri tanımla
+        
    
         $baseUrl = "https://testapp.halkode.com.tr/ccpayment/api/installments";
-        include 'degisken.php';
+        
         $invoice_id = $_POST['invoice_id'];
 
-        // Token isteği
+        
         $tokenResponse = getToken($app_id, $appSecret);
         $decodedTokenResponse = json_decode($tokenResponse, true);
 
@@ -47,17 +51,17 @@
             return;
         }
 
-        // Formdan verileri topla
+        
         $data = array(
             "invoice_id" => $invoice_id,
             "merchant_key" => $merchantKey
         );
 
-        // Gönderilen verileri göster
+        
         echo "<h3>Gönderilen Veriler</h3>";
-        echo "<pre>" . htmlspecialchars(json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)) . "</pre>";
+        echo "<pre>" . htmlspecialchars(json_encode(halkode_safe_display_payload($data), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)) . "</pre>";
 
-        // Ödeme isteğini göndermek için CURL
+        
         $ch = curl_init($baseUrl);
         curl_setopt($ch, CURLOPT_HTTPHEADER, array(
             'Content-Type: application/json',
@@ -67,14 +71,19 @@
         curl_setopt($ch, CURLOPT_POST, true);
         curl_setopt($ch, CURLOPT_POSTFIELDS, $jsonData);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 20);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, false);
         $response = curl_exec($ch);
         curl_close($ch);
 
-        // Yanıtı göster
+        
         echo "<h3>Yanıt</h3><pre>" . htmlspecialchars($response) . "</pre>";
     }
 
-    // Token alma fonksiyonu
+    
     function getToken($app_id, $app_secret)
     {
         $baseUrl = "https://testapp.halkode.com.tr/ccpayment/api/token";
@@ -84,6 +93,11 @@
         curl_setopt($ch, CURLOPT_POST, true);
         curl_setopt($ch, CURLOPT_POSTFIELDS, $jsonData);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 15);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, false);
         curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json'));
         $response = curl_exec($ch);
         curl_close($ch);
